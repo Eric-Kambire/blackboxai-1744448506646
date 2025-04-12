@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mAnkInd - Human vs AI Duel (Standalone)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        /* Main Styling */
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background-color: #000;
+            color: #0f0;
+            line-height: 1.6;
+        }
+        
+        /* Terminal Styling */
+        .terminal-window {
+            background-color: rgba(0, 20, 0, 0.9);
+            border: 1px solid #0f5;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+        }
+        
+        .terminal-header {
+            background-color: #001200;
+            border-bottom: 1px solid #0f5;
+        }
+        
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .terminal-timer {
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            color: #0f5;
+        }
+        
+        .terminal-body {
+            height: 400px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        
+        .terminal-input {
+            background-color: rgba(0, 20, 0, 0.8);
+        }
+        
+        .terminal-prompt {
+            color: #0f5;
+        }
+        
+        .terminal-button {
+            background-color: transparent;
+            color: #0f5;
+            border: 1px solid #0f5;
+            border-radius: 3px;
+            padding: 0.25rem 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .terminal-button:hover {
+            background-color: rgba(0, 255, 0, 0.1);
+        }
+        
+        /* Message Styling */
+        .message {
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        
+        .message-sender {
+            color: #0f5;
+            font-weight: bold;
+        }
+        
+        .message-content {
+            color: #afffe9;
+        }
+        
+        .message.you .message-content {
+            color: #d1ffaf;
+        }
+        
+        .system-message {
+            color: #ff8;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        /* Terminal Panel */
+        .terminal-panel {
+            background-color: rgba(0, 20, 0, 0.9);
+            border: 1px solid #0f5;
+            border-radius: 5px;
+        }
+        
+        .terminal-panel-header {
+            padding: 0.5rem 1rem;
+            background-color: #001200;
+            border-bottom: 1px solid #0f5;
+        }
+        
+        .terminal-panel-body {
+            padding: 1rem;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .status-label {
+            color: #0f5;
+            font-size: 0.8rem;
+        }
+        
+        .status-value {
+            color: #afffe9;
+            font-size: 0.8rem;
+        }
+        
+        .status-value.in-progress {
+            color: #ff9;
+        }
+        
+        /* Decision Buttons */
+        .decision-button {
+            padding: 0.5rem;
+            border-radius: 3px;
+            border: 1px solid;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .human-button {
+            border-color: #3f8;
+            color: #3f8;
+        }
+        
+        .human-button:hover:not(:disabled) {
+            background-color: rgba(51, 255, 136, 0.1);
+        }
+        
+        .ai-button {
+            border-color: #38f;
+            color: #38f;
+        }
+        
+        .ai-button:hover:not(:disabled) {
+            background-color: rgba(51, 136, 255, 0.1);
+        }
+        
+        .decision-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* World Map */
+        .world-map {
+            text-align: center;
+        }
+        
+        .ascii-map {
+            color: #0f5;
+            font-size: 0.7rem;
+            line-height: 1.2;
+        }
+        
+        .map-legend {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+            font-size: 0.7rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            margin-right: 5px;
+        }
+        
+        .legend-human {
+            background-color: #3f8;
+        }
+        
+        .legend-ai {
+            background-color: #38f;
+        }
+        
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #001200;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #0f5;
+        }
+        
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .modal-content {
+            width: 90%;
+            max-width: 600px;
+        }
+        
+        .modal.hidden {
+            display: none;
+        }
+        
+        /* Glitch Effect */
+        .glitch-text {
+            position: relative;
+            animation: glitch 1s infinite;
+            color: #0f5;
+        }
+        
+        @keyframes glitch {
+            0% { text-shadow: 0.05em 0 0 rgba(255, 0, 0, 0.75), -0.05em -0.025em 0 rgba(0, 255, 0, 0.75), -0.025em 0.05em 0 rgba(0, 0, 255, 0.75); }
+            14% { text-shadow: 0.05em 0 0 rgba(255, 0, 0, 0.75), -0.05em -0.025em 0 rgba(0, 255, 0, 0.75), -0.025em 0.05em 0 rgba(0, 0, 255, 0.75); }
+            15% { text-shadow: -0.05em -0.025em 0 rgba(255, 0, 0, 0.75), 0.025em 0.025em 0 rgba(0, 255, 0, 0.75), -0.05em -0.05em 0 rgba(0, 0, 255, 0.75); }
+            49% { text-shadow: -0.05em -0.025em 0 rgba(255, 0, 0, 0.75), 0.025em 0.025em 0 rgba(0, 255, 0, 0.75), -0.05em -0.05em 0 rgba(0, 0, 255, 0.75); }
+            50% { text-shadow: 0.025em 0.05em 0 rgba(255, 0, 0, 0.75), 0.05em 0 0 rgba(0, 255, 0, 0.75), 0 -0.05em 0 rgba(0, 0, 255, 0.75); }
+            99% { text-shadow: 0.025em 0.05em 0 rgba(255, 0, 0, 0.75), 0.05em 0 0 rgba(0, 255, 0, 0.75), 0 -0.05em 0 rgba(0, 0, 255, 0.75); }
+            100% { text-shadow: -0.025em 0 0 rgba(255, 0, 0, 0.75), -0.025em -0.025em 0 rgba(0, 255, 0, 0.75), -0.025em -0.05em 0 rgba(0, 0, 255, 0.75); }
+        }
+        
+        /* Blinking Effect */
+        .blink {
+            animation: blink 1s steps(2, start) infinite;
+        }
+        
+        @keyframes blink {
+            to { visibility: hidden; }
+        }
+        
+        /* Other Utility Styles */
+        .terminal-text {
+            color: #0f5;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        
+        .terminal-badge {
+            background-color: rgba(0, 20, 0, 0.9);
+            border: 1px solid #0f5;
+            border-radius: 3px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            color: #afffe9;
+        }
+        
+        .terminal-badge.link a {
+            color: #afffe9;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .terminal-badge.link a:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+<body class="bg-black text-green-400">
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="py-6 border-b border-green-800 flex justify-between items-center">
+            <div class="flex items-center">
+                <h1 class="text-4xl font-bold glitch-text" data-text="mAnkInd">mAnkInd</h1>
+                <span class="ml-4 text-sm terminal-text">//human<span class="blink">_</span>vs<span class="blink">_</span>AI</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="terminal-badge">
+                    LEVEL: <span id="player-level" class="font-bold">1</span>
+                </div>
+                <div class="terminal-badge">
+                    XP: <span id="player-xp" class="font-bold">0</span>
+                </div>
+                <div class="terminal-badge link">
+                    <a href="#about" class="hover:text-green-200"><i class="fas fa-question-circle mr-1"></i> ABOUT</a>
+                </div>
+                <div class="terminal-badge link">
+                    <a href="#ranks" class="hover:text-green-200"><i class="fas fa-trophy mr-1"></i> RANKS</a>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Game Area -->
+        <main class="flex-grow flex flex-col md:flex-row gap-4 py-6">
+            <!-- Game Interface -->
+            <div class="flex-grow terminal-window">
+                <!-- Terminal Header -->
+                <div class="terminal-header flex justify-between items-center p-2">
+                    <div class="flex items-center">
+                        <span class="terminal-dot bg-red-500"></span>
+                        <span class="terminal-dot bg-yellow-500"></span>
+                        <span class="terminal-dot bg-green-500"></span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-xs text-green-200 opacity-70">NEXUS TERMINAL v2.4.3</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span id="timer" class="terminal-timer">02:00</span>
+                    </div>
+                </div>
+                
+                <!-- Terminal Body - Chat Area -->
+                <div id="chat-container" class="terminal-body p-4 overflow-y-auto">
+                    <div class="welcome-message terminal-text">
+                        <p>>>_ NEXUS SYSTEM ONLINE</p>
+                        <p>>>_ INITIALIZING DUEL PROTOCOLS...</p>
+                        <p>>>_ WELCOME TO MANKIND - THE ULTIMATE TEST</p>
+                        <p>>>_ YOU HAVE 2 MINUTES TO DETERMINE: HUMAN OR AI?</p>
+                        <p>>>_ TYPE /help FOR COMMANDS</p>
+                    </div>
+                    <!-- Messages will be added here dynamically -->
+                </div>
+                
+                <!-- Terminal Input -->
+                <div class="terminal-input p-3 border-t border-green-800">
+                    <form id="message-form" class="flex items-center">
+                        <span class="mr-2 terminal-prompt">></span>
+                        <input id="message-input" type="text" placeholder="Type your message..." 
+                               class="flex-grow bg-transparent border-none focus:outline-none text-green-300">
+                        <button type="submit" class="ml-2 terminal-button">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Game Info Panel -->
+            <div class="md:w-1/4 flex flex-col gap-4">
+                <!-- Status Panel -->
+                <div class="terminal-panel">
+                    <div class="terminal-panel-header">
+                        <h3 class="terminal-text"><i class="fas fa-signal mr-2"></i> STATUS</h3>
+                    </div>
+                    <div class="terminal-panel-body">
+                        <div class="status-item">
+                            <span class="status-label">DUEL STATUS:</span>
+                            <span id="game-status" class="status-value in-progress">CONNECTING...</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">NETWORK:</span>
+                            <span class="status-value">SECURE</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">NEXUS NODES:</span>
+                            <span class="status-value">84% INFILTRATED</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">MEMORY USAGE:</span>
+                            <span class="status-value">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 67%"></div>
+                                </div>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Decision Panel -->
+                <div id="decision-panel" class="terminal-panel opacity-50">
+                    <div class="terminal-panel-header">
+                        <h3 class="terminal-text"><i class="fas fa-robot mr-2"></i> IDENTIFY OPPONENT</h3>
+                    </div>
+                    <div class="terminal-panel-body flex flex-col gap-4">
+                        <p class="terminal-text text-xs">Select your final answer. Remember, this cannot be changed.</p>
+                        
+                        <button id="human-btn" class="decision-button human-button" disabled>
+                            <i class="fas fa-user mr-2"></i> HUMAN
+                        </button>
+                        
+                        <button id="ai-btn" class="decision-button ai-button" disabled>
+                            <i class="fas fa-robot mr-2"></i> AI
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- World Map Status (Simplified) -->
+                <div class="terminal-panel">
+                    <div class="terminal-panel-header">
+                        <h3 class="terminal-text"><i class="fas fa-globe mr-2"></i> WORLD CONTROL</h3>
+                    </div>
+                    <div class="terminal-panel-body">
+                        <div class="world-map">
+                            <!-- Simplified ASCII art map -->
+                            <pre class="ascii-map">
+  ┌─────┬─┬───┬─────────────┐  
+  │▓▓▓▓▓│▓│▓▓▓│▓▓▓▓▓▓▓▓▓▓▓▓▓│  
+  │▓┌─┐▓│▓│▓┌─┤▓┌─┐▓┌───┐▓▓▓│  
+  │▓└─┘▓└─┘▓│▓│▓└─┘▓│▓▓▓│▓▓▓│  
+  │▓▓▓▓▓▓▓▓▓│▓│▓▓▓▓▓│▓▓▓│▓▓▓│  
+  └─────────┴─┴─────┴───┴───┘  
+            </pre>
+                            <div class="map-legend">
+                                <div class="legend-item">
+                                    <span class="legend-color legend-human"></span>
+                                    <span class="legend-text">HUMAN CONTROL</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color legend-ai"></span>
+                                    <span class="legend-text">AI CONTROL</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Results Modal (Hidden by default) -->
+        <div id="results-modal" class="modal hidden">
+            <div class="modal-content terminal-window">
+                <div class="terminal-header flex justify-between items-center p-2">
+                    <div class="flex items-center">
+                        <span class="terminal-dot bg-red-500"></span>
+                        <span class="terminal-dot bg-yellow-500"></span>
+                        <span class="terminal-dot bg-green-500"></span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-xs text-green-200 opacity-70">DUEL RESULTS</span>
+                    </div>
+                    <div class="flex items-center">
+                        <button id="close-modal" class="text-green-500 hover:text-green-300">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="modal-body p-6">
+                    <h2 id="result-title" class="text-2xl mb-4 glitch-text">DUEL COMPLETE</h2>
+                    
+                    <div id="result-details" class="mb-6">
+                        <!-- Will be filled dynamically -->
+                    </div>
+                    
+                    <div id="xp-gain" class="status-item mb-4">
+                        <span class="status-label">XP GAINED:</span>
+                        <span id="xp-value" class="status-value xp-value">+0</span>
+                    </div>
+                    
+                    <div class="flex justify-center mt-8">
+                        <button id="next-duel-btn" class="terminal-button py-2 px-4">
+                            NEXT DUEL <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const chatContainer = document.getElementById("chat-container");
+            const messageInput = document.getElementById("message-input");
+            const messageForm = document.getElementById("message-form");
+            const timerDisplay = document.getElementById("timer");
+            const gameStatus = document.getElementById("game-status");
+            const resultsModal = document.getElementById("results-modal");
+            const xpValue = document.getElementById("xp-value");
+            const nextDuelBtn = document.getElementById("next-duel-btn");
+            const humanBtn = document.getElementById("human-btn");
+            const aiBtn = document.getElementById("ai-btn");
+            const decisionPanel = document.getElementById("decision-panel");
+            const playerLevel = document.getElementById("player-level");
+            const playerXP = document.getElementById("player-xp");
+            
+            // AI responses data
+            const AI_GREETINGS = [
+                "Hello there! Ready to chat?",
+                "Hi! I'm looking forward to our conversation.",
+                "Hey, how's it going?",
+                "Greetings! Excited to be talking with you.",
+                "Hello! Let's have a good conversation.",
+                "Hi there! What would you like to talk about today?",
+                "Welcome to our conversation! How are you doing?",
+                "Hey! Ready to chat?",
+                "Hello! How's your day been?",
+                "Hi! Looking forward to our discussion."
+            ];
+            
+            const AI_RESPONSES = [
+                "I think that's a really interesting perspective!",
+                "I've been thinking about that topic recently too.",
+                "That's a good point - I hadn't considered that angle before.",
+                "I'm curious what made you interested in this subject?",
+                "I enjoy these kinds of conversations, they're thought-provoking.",
+                "That reminds me of something I read recently about this topic.",
+                "I've had similar thoughts before. It's nice to find someone who gets it.",
+                "That's fascinating - what else do you think about this?",
+                "I'm not entirely sure I agree, but I see where you're coming from.",
+                "Let me think about that for a moment... it's an intriguing idea.",
+                "You know, I was just having this conversation with a friend last weekend. We couldn't agree on this either!",
+                "That's a really nuanced take. I appreciate when people don't just go with the obvious interpretation.",
+                "Hmm, my initial reaction is to disagree, but I'm trying to be better about hearing people out first. Can you elaborate?",
+                "I literally had a dream about something like this last night. Weird coincidence!",
+                "I'm having one of those days where my brain feels foggy, but your point actually made things clearer for me. Thanks!",
+                "I've been on the fence about this for ages. Sometimes I think one way, sometimes another. Today I'm leaning toward agreeing with you."
+            ];
+            
+            const TOPIC_RESPONSES = {
+                "weather": [
+                    "The weather has been so unpredictable lately. One day it's sunny, the next it's pouring!",
+                    "I love this time of year - the weather is just perfect.",
+                    "Weather forecasts are never accurate in my experience. Do you trust them?",
+                    "I always check the weather before heading out. Can't stand getting caught in the rain!"
+                ],
+                "music": [
+                    "I've been listening to a lot of indie music lately. Any recommendations?",
+                    "Music taste is so personal, isn't it? I find my preferences change with my mood.",
+                    "I went to a concert last month and it was amazing. Nothing beats live music!",
+                    "I used to play piano when I was younger. Do you play any instruments?"
+                ],
+                "movie": [
+                    "I watched a great movie last weekend! The plot twist at the end was incredible.",
+                    "I'm a big fan of sci-fi movies. What genres do you enjoy?",
+                    "Some movies from the 90s have aged so well. Others... not so much.",
+                    "I have a huge watchlist but never enough time to get through it all."
+                ],
+                "film": [
+                    "I think film as an art form is so powerful. Do you have a favorite director?",
+                    "Foreign films often offer such a different perspective than Hollywood productions.",
+                    "Classic films have a certain quality that's hard to replicate today.",
+                    "I enjoy analyzing cinematography and visual storytelling in films."
+                ],
+                "book": [
+                    "I just finished an amazing book that I couldn't put down. Do you read much?",
+                    "Some books have completely changed how I see the world. Have you had that experience?",
+                    "I tend to read multiple books at once, switching depending on my mood.",
+                    "There's something special about physical books that e-readers can't replicate."
+                ],
+                "game": [
+                    "I enjoy games that make you think and solve puzzles. What about you?",
+                    "Online gaming communities can be so interesting sociologically.",
+                    "I've been playing this new game that has a fascinating story arc.",
+                    "Strategy games are my favorite - I like planning several moves ahead."
+                ],
+                "food": [
+                    "I tried a new recipe yesterday that turned out surprisingly well!",
+                    "Food is one of life's greatest pleasures, don't you think?",
+                    "I'm always looking for new cuisines to try. Any recommendations?",
+                    "Cooking is both an art and a science - getting the balance right is tricky."
+                ],
+                "travel": [
+                    "I love exploring new places and experiencing different cultures.",
+                    "My favorite part of traveling is trying the local cuisine.",
+                    "What's the most interesting place you've visited?",
+                    "I have a long list of destinations I hope to visit someday."
+                ],
+                "sport": [
+                    "I try to stay active by playing sports regularly. It's good for both body and mind.",
+                    "The psychology behind team sports is fascinating.",
+                    "I was watching an incredible match last weekend - the competition was so intense!",
+                    "Do you follow any particular sports or teams?"
+                ],
+                "ai": [
+                    "I find the progress in AI technology fascinating, don't you?",
+                    "The ethics of artificial intelligence is such a complex topic. I'm not sure where I stand on it.",
+                    "I read about a new AI model recently that can generate entire novels. Technology is advancing so quickly.",
+                    "Sometimes I wonder if AI will ever truly understand human emotions or if they'll just get better at simulating them."
+                ],
+                "human": [
+                    "Human psychology is such a fascinating field. The way people think and behave is so complex.",
+                    "What do you think makes humans unique compared to other species?",
+                    "Have you ever wondered about human consciousness? It's such a mysterious phenomenon.",
+                    "The human capacity for both cruelty and compassion never ceases to amaze me."
+                ],
+                "technology": [
+                    "Technology is evolving so rapidly, it's hard to keep up sometimes.",
+                    "I'm interested in how technology shapes social interactions.",
+                    "Some new technologies seem like science fiction come to life.",
+                    "I try to balance embracing new tech with maintaining some digital boundaries."
+                ],
+                "robot": [
+                    "Robotics has come so far in recent years. The capabilities are impressive.",
+                    "I'm fascinated by the intersection of robotics and human behavior.",
+                    "The ethical questions surrounding advanced robotics are quite complex.",
+                    "What role do you think robots will play in society in the future?"
+                ],
+                "philosophy": [
+                    "I find philosophical discussions so stimulating - they make you question your assumptions.",
+                    "Different philosophical traditions offer such varied perspectives on life's big questions.",
+                    "Do you have a particular philosophical viewpoint that resonates with you?",
+                    "I think philosophy helps us navigate the complexity of human existence."
+                ],
+                "science": [
+                    "Recent scientific discoveries have been mind-blowing. It's an exciting time.",
+                    "The scientific method is so powerful, but it also has its limitations.",
+                    "I try to stay updated on scientific developments. It helps to understand the world better.",
+                    "The intersection of different scientific fields often yields the most interesting breakthroughs."
+                ],
+                "art": [
+                    "Art has this amazing ability to evoke emotions and provoke thought.",
+                    "I appreciate how art can be interpreted in so many different ways.",
+                    "Do you have a favorite art style or artist?",
+                    "The boundary between art and technology is becoming increasingly blurred."
+                ]
+            };
+            
+            // Game state variables
+            let gameActive = false;
+            let timeRemaining = 120;
+            let timerInterval = null;
+            let currentLevel = 1;
+            let currentXP = 0;
+            
+            // Initialize the game
+            function initGame() {
+                // Update welcome message
+                clearWelcomeMessage();
+                
+                // Update status
+                gameStatus.textContent = "IN PROGRESS";
+                
+                // Enable buttons
+                humanBtn.disabled = false;
+                aiBtn.disabled = false;
+                decisionPanel.classList.remove("opacity-50");
+                
+                // Set game state
+                gameActive = true;
+                timeRemaining = 120;
+                updateTimer(timeRemaining);
+                
+                // Start the timer
+                startTimer();
+                
+                // Add system message
+                addSystemMessage("Connection established. Game started!");
+                
+                // Send AI greeting
+                setTimeout(() => {
+                    const greeting = AI_GREETINGS[Math.floor(Math.random() * AI_GREETINGS.length)];
+                    addMessage("OPPONENT", greeting);
+                }, 1000);
+            }
+            
+            // Start the timer
+            function startTimer() {
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                }
+                
+                timerInterval = setInterval(() => {
+                    if (timeRemaining > 0) {
+                        timeRemaining--;
+                        updateTimer(timeRemaining);
+                    } else {
+                        clearInterval(timerInterval);
+                        endGame();
+                        addSystemMessage("Time's up! Make your decision.");
+                    }
+                }, 1000);
+            }
+            
+            // Update timer display
+            function updateTimer(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                timerDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }
+            
+            // Clear welcome message
+            function clearWelcomeMessage() {
+                const welcomeMessage = document.querySelector(".welcome-message");
+                if (welcomeMessage) {
+                    welcomeMessage.innerHTML = "";
+                }
+            }
+            
+            // Add message to chat
+            function addMessage(sender, content) {
+                const messageEl = document.createElement("div");
+                messageEl.classList.add("message", sender.toLowerCase());
+                
+                const displayName = sender === "OPPONENT" ? "OPPONENT" : "YOU";
+                messageEl.innerHTML = `<span class="message-sender">${displayName}</span>: <span class="message-content">${content}</span>`;
+                
+                chatContainer.appendChild(messageEl);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            // Add system message to chat
+            function addSystemMessage(text) {
+                const messageEl = document.createElement("div");
+                messageEl.classList.add("system-message");
+                messageEl.innerHTML = `<span class="message-system">>>> ${text}</span>`;
+                
+                chatContainer.appendChild(messageEl);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            // End the game
+            function endGame() {
+                gameActive = false;
+                gameStatus.textContent = "TIME'S UP!";
+                
+                // Clear timer
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                }
+            }
+            
+            // Show result modal
+            function showResult(correct) {
+                const resultTitle = document.getElementById("result-title");
+                resultTitle.textContent = correct ? "YOU WON!" : "YOU LOST!";
+                
+                const score = correct ? 50 : -25;
+                
+                // Update XP
+                currentXP += score;
+                
+                // Check for level up
+                if (currentXP >= currentLevel * 100 && currentLevel < 10) {
+                    currentLevel++;
+                    addSystemMessage(`Level up! You are now level ${currentLevel}`);
+                }
+                
+                // Update displayed level and XP
+                playerLevel.textContent = currentLevel;
+                playerXP.textContent = currentXP;
+                
+                // Set XP value in modal
+                xpValue.textContent = score > 0 ? `+${score}` : score;
+                
+                // Add details
+                const resultDetails = document.getElementById("result-details");
+                resultDetails.innerHTML = `
+                    <p>Your opponent was AI.</p>
+                    <p>Your new level: ${currentLevel}</p>
+                    <p>XP: ${currentXP}</p>
+                `;
+                
+                // Show modal
+                resultsModal.classList.remove("hidden");
+            }
+            
+            // Generate AI response - Improved contextual responses
+            function getAIResponse(message) {
+                const lowercaseMsg = message.toLowerCase().trim();
+                
+                // Check for direct questions about identity
+                if (lowercaseMsg.includes("are you human") || 
+                    lowercaseMsg.includes("are you ai") || 
+                    lowercaseMsg.includes("are you a bot") || 
+                    lowercaseMsg.includes("are you real") ||
+                    lowercaseMsg.match(/human or ai/i) ||
+                    lowercaseMsg.match(/bot or human/i)) {
+                    
+                    const identityResponses = [
+                        "I'm just like anyone else participating in this conversation. Why do you ask?",
+                        "That's an interesting question. What makes you wonder if I'm human or not?",
+                        "I think the point of this game is for you to figure that out, isn't it?",
+                        "I'm curious why you're asking that. Have I said something that seems off?",
+                        "I'm just chatting with you. Does it matter if I'm human or AI?",
+                        "I could ask you the same question! How do I know you're not an AI?",
+                        "Let's talk about something else. What are your interests?",
+                        "I'm here chatting with you. What do you think I am?"
+                    ];
+                    return identityResponses[Math.floor(Math.random() * identityResponses.length)];
+                }
+                
+                // Check for questions
+                if (lowercaseMsg.endsWith("?")) {
+                    if (lowercaseMsg.startsWith("what") || 
+                        lowercaseMsg.startsWith("how") || 
+                        lowercaseMsg.startsWith("why") || 
+                        lowercaseMsg.startsWith("when") || 
+                        lowercaseMsg.startsWith("where") || 
+                        lowercaseMsg.startsWith("who") || 
+                        lowercaseMsg.startsWith("do you") ||
+                        lowercaseMsg.startsWith("can you") ||
+                        lowercaseMsg.startsWith("could you")) {
+                        
+                        // Questions about the AI itself
+                        if (lowercaseMsg.includes("you") && 
+                            (lowercaseMsg.includes("like") || lowercaseMsg.includes("enjoy") || 
+                             lowercaseMsg.includes("favorite") || lowercaseMsg.includes("prefer"))) {
+                            
+                            const personalResponses = [
+                                "I enjoy thoughtful conversations like this one. What about you?",
+                                "I'm interested in a wide range of topics - science, art, philosophy. How about you?",
+                                "I like learning new things from conversations. Everyone has a unique perspective.",
+                                "That's a good question. I'd say I'm particularly interested in how people communicate.",
+                                "I enjoy music, books, and good conversation. What are some of your interests?"
+                            ];
+                            return personalResponses[Math.floor(Math.random() * personalResponses.length)];
+                        }
+                        
+                        // General questions
+                        const questionResponses = [
+                            "That's an interesting question. I've been thinking about that recently too.",
+                            "I'm not sure I have a definitive answer, but I think it depends on the context.",
+                            "I have some thoughts on that, but I'm curious about your perspective first.",
+                            "Great question! I've wondered about that myself.",
+                            "That's something I've been considering lately. What are your thoughts?"
+                        ];
+                        return questionResponses[Math.floor(Math.random() * questionResponses.length)];
+                    }
+                }
+                
+                // Check for greetings
+                if (lowercaseMsg.match(/^(hi|hello|hey|greetings|good morning|good afternoon|good evening)/i)) {
+                    const greetingResponses = [
+                        "Hello there! How are you today?",
+                        "Hi! It's nice to be chatting with you.",
+                        "Hey! How's your day going?",
+                        "Hello! What would you like to discuss today?",
+                        "Hi there! I'm glad we have a chance to talk."
+                    ];
+                    return greetingResponses[Math.floor(Math.random() * greetingResponses.length)];
+                }
+                
+                // Check for topic-specific responses
+                for (const [topic, responses] of Object.entries(TOPIC_RESPONSES)) {
+                    if (lowercaseMsg.includes(topic)) {
+                        return responses[Math.floor(Math.random() * responses.length)];
+                    }
+                }
+                
+                // Generic responses as a fallback, but try to make them more engaging
+                if (lowercaseMsg.length < 10) {
+                    return "Could you elaborate a bit more on that? I'd like to understand better.";
+                } else {
+                    return AI_RESPONSES[Math.floor(Math.random() * AI_RESPONSES.length)];
+                }
+            }
+            
+            // Event Listeners
+            messageForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                
+                const message = messageInput.value.trim();
+                if (message && gameActive) {
+                    // Add user message
+                    addMessage("YOU", message);
+                    
+                    // Clear input
+                    messageInput.value = "";
+                    
+                    // AI response with delay
+                    setTimeout(() => {
+                        const response = getAIResponse(message);
+                        addMessage("OPPONENT", response);
+                    }, Math.random() * 1000 + 500);
+                }
+            });
+            
+            humanBtn.addEventListener("click", () => {
+                // Disable buttons
+                humanBtn.disabled = true;
+                aiBtn.disabled = true;
+                
+                addSystemMessage("You chose: HUMAN");
+                
+                // AI is never human in this game
+                showResult(false);
+            });
+            
+            aiBtn.addEventListener("click", () => {
+                // Disable buttons
+                humanBtn.disabled = true;
+                aiBtn.disabled = true;
+                
+                addSystemMessage("You chose: AI");
+                
+                // AI is always AI in this game
+                showResult(true);
+            });
+            
+            nextDuelBtn.addEventListener("click", () => {
+                // Hide modal
+                resultsModal.classList.add("hidden");
+                
+                // Clear chat
+                chatContainer.innerHTML = "";
+                
+                // Restart game
+                initGame();
+            });
+            
+            document.getElementById("close-modal").addEventListener("click", () => {
+                resultsModal.classList.add("hidden");
+            });
+            
+            // Start the game
+            setTimeout(initGame, 1000);
+        });
+    </script>
+</body>
+</html>
